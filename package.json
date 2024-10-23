@@ -1,0 +1,19 @@
+{
+  "name": "express-authentication-api",
+  "version": "1.0.0",
+  "description": "A simple Rest API for authentication in Nodejs & Express",
+  "main": "index.mjs",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "keywords": [
+    "nodejs",
+    "express",
+    "sequilize"
+  ],
+  "author": "PAQUI",
+  "license": "ISC"
+
+}
