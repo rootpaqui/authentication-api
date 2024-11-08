@@ -1,5 +1,5 @@
 import { DataTypes, Sequelize } from "sequelize";
-import UserModel from '../models/User.mjs';
+import UserModel from "../models/User.mjs";
 
 const sequelize = new Sequelize(
   process.env.DB_NAME,
@@ -13,11 +13,7 @@ const sequelize = new Sequelize(
   }
 );
 
-
-const User = UserModel(sequelize,DataTypes)
-
-
-
+const User = UserModel(sequelize, DataTypes);
 
 const initDb = () => {
   sequelize
@@ -26,4 +22,4 @@ const initDb = () => {
     .catch((err) => console.error("Failed to synchronize the database:", err));
 };
 
-export default { initDb };
+export default { initDb, User };
