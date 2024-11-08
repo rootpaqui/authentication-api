@@ -15,6 +15,9 @@ export default (sequelize, DataTypes) => {
       password: {
         type: DataTypes.STRING,
       },
+      refreshToken: {
+        type: DataTypes.STRING
+      }
     },
     { tableName: "users" }
   );
