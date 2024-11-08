@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node -r dotenv/config index.mjs",
-    "dev": "node -r dotenv/config --watch index.mjs"
+    "dev": "node -r dotenv/config --watch index.mjs",
+    "key:generate": "node src/config/generateSecretKey.mjs"
   },
   "keywords": [
     "nodejs",
