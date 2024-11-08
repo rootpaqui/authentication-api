@@ -55,7 +55,7 @@ const login = (request, response) => {
 
           const token = jwt.sign(
             { userId: user.id },
-            process.env.JWT_PRIVATE_KEY,
+            process.env.ACCESS_TOKEN_SECRET,
             {
               expiresIn: "24h",
             }

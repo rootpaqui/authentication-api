@@ -1,4 +1,4 @@
-import { verify } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 
 export default (request, response, next) => {
   const authorizationHeader = request.headers.authorization;
@@ -9,7 +9,7 @@ export default (request, response, next) => {
   }
 
   const token = authorizationHeader.split(" ")[1];
-  const decodedToken = verify(token, process.env.JWT_PRIVATE_KEY, (error, decodedToken) => {
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decodedToken) => {
     if (error) {
       const message = `Invalid token.`;
       return response.status(401).json({ message, data: error });
