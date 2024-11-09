@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "A simple Rest API for authentication in Nodejs & Express",
   "main": "index.mjs",
-  "type": "module",
   "scripts": {
     "start": "node -r dotenv/config index.mjs",
     "dev": "node -r dotenv/config --watch index.mjs",
