@@ -16,7 +16,7 @@ const register = (request, response) => {
           .status(409)
           .json({ message: "Email already exists! Please chose another one." });
       }
-
+      console.log('l');
       bcrypt
         .hash("password", 10)
         .then((hashedPassword) =>
@@ -28,7 +28,7 @@ const register = (request, response) => {
         .then((user) => response.status(201).json({ message: "Success." }));
     })
     .catch((error) => {
-      response
+      return response
         .status(500)
         .json({ message: "Oops! An error has occurred", data: error });
     });
@@ -53,18 +53,32 @@ const login = (request, response) => {
             return response.status(401).json({ errorMessage });
           }
 
-          const token = jwt.sign(
+          const accessToken = jwt.sign(
             { userId: user.id },
             process.env.ACCESS_TOKEN_SECRET,
             {
-              expiresIn: "24h",
+              expiresIn: "2h",
             }
           );
 
-          return response.json({
-            message: "Authentication successful",
-            data: user,
-            token,
+          const refreshToken = jwt.sign(
+            { userId: user.id },
+            process.env.REFRESH_TOKEN_SECRET,
+            {
+              expiresIn: "30d",
+            }
+          );
+
+          user.update({ refreshToken }).then((userUpdated) => {
+            response.cookie("refreshJWT", refreshToken, {
+              httpOnly: true,
+              maxAge: 30 * 24 * 60 * 60 * 1000,
+            });
+            return response.json({
+              message: "Authentication successful",
+              data: userUpdated,
+              accessToken,
+            });
           });
         });
     })
@@ -73,7 +87,43 @@ const login = (request, response) => {
     );
 };
 
+const refreshToken = (request, response) => {
+  if (!request.cookies?.refreshJWT) return response.sendStatus(401);
+
+  const token = request.cookies.refreshJWT;
+  User.findOne({ where: { refreshToken: token } })
+    .then((user) => {
+      if (!user) return response.sendStatus(403);
+
+      jwt.verify(
+        token,
+        process.env.REFRESH_TOKEN_SECRET,
+        (error, decodedToken) => {
+          if (error || user.id !== decodedToken.userId)
+            return response.sendStatus(403);
+
+          const accessToken = jwt.sign(
+            { userId: user.id },
+            process.env.ACCESS_TOKEN_SECRET,
+            {
+              expiresIn: "2h",
+            }
+          );
+
+          return response.json({
+            message: "Token have been refreshed.",
+            accessToken,
+          });
+        }
+      );
+    })
+    .catch((error) =>
+      response.json({ message: "Token refreshing failed.", data: error })
+    );
+};
+
 export default {
   login,
   register,
+  refreshToken,
 };
