@@ -10,14 +10,19 @@ export default (sequelize, DataTypes) => {
       },
       email: {
         type: DataTypes.STRING,
+        allowNull: false,
         unique: { msg: "This email already exists." },
+        validate: {
+          isEmail: true,
+        },
       },
       password: {
         type: DataTypes.STRING,
+        allowNull: false,
       },
       refreshToken: {
-        type: DataTypes.STRING
-      }
+        type: DataTypes.STRING,
+      },
     },
     { tableName: "users" }
   );
