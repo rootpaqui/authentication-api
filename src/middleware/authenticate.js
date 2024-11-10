@@ -1,6 +1,6 @@
-import jwt from "jsonwebtoken";
+const jwt = require("jsonwebtoken");
 
-export default (request, response, next) => {
+module.exports =  (request, response, next) => {
   const authorizationHeader = request.headers.authorization;
 
   if (!authorizationHeader) return response.sendStatus(401);
