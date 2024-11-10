@@ -12,7 +12,7 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     toJSON() {
-      return { ...this.get(), password: undefined };
+      return { ...this.get(), password: undefined, refreshToken: undefined };
     }
   }
   User.init(
@@ -28,6 +28,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: { msg: "This email already exists." },
         validate: {
+          notEmpty: { msg: "This field cannot be empty" },
           isEmail: { msg: "Please provide a valid email." },
         },
       },
