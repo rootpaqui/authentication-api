@@ -10,12 +10,12 @@ module.exports = {
         defaultValue: Sequelize.DataTypes.UUIDV4,
       },
       email: {
-        type: Sequelize.DataTypes.STRING,
         allowNull: false,
+        type: Sequelize.DataTypes.STRING,
       },
       password: {
-        type: Sequelize.DataTypes.STRING,
         allowNull: false,
+        type: Sequelize.DataTypes.STRING,
       },
       refreshToken: {
         type: Sequelize.DataTypes.STRING,

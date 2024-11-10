@@ -2,13 +2,13 @@
   "name": "express-authentication-api",
   "version": "1.0.0",
   "description": "A simple Rest API for authentication in Nodejs & Express",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node -r dotenv/config index.js",
-    "dev": "node -r dotenv/config --watch index.js",
-    "migrate": "npx sequelize-cli db:migrate",
-    "migrate:undo": "npx sequelize-cli db:migrate:undo"
-
+    "start": "node -r dotenv/config server.js",
+    "dev": "node -r dotenv/config --watch server.js",
+    "key:generate": "node scripts/generateSecretKey.js",
+    "sequelize:migrate": "npx sequelize-cli db:migrate",
+    "sequelize:migrate:undo": "npx sequelize-cli db:migrate:undo"
   },
   "keywords": [
     "nodejs",
@@ -19,7 +19,6 @@
   "license": "ISC",
   "dependencies": {
     "bcrypt": "^5.1.1",
-    "body-parser": "^1.20.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
