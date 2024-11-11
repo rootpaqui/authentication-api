@@ -2,34 +2,25 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { User } = require("../models");
 
-const register = (request, response) => {
+const register = async (request, response) => {
   const { email, password } = request.body;
   if (!email || !password)
     return response.status(400).json("Email and password are required!");
-  User.findOne({ where: { email } })
-    .then((user) => {
-      if (user) {
-        return response
-          .status(409)
-          .json("Email already exists! Please chose another one.");
-      }
-      // console.log("l");
-      bcrypt
-        .hash("password", 10)
-        .then((hashedPassword) =>
-          User.create({ email, password: hashedPassword })
-            .then((user) =>
-              response.status(201).json({ message: "Success.", user })
-            )
-            .catch((error) => error)
-        )
-        .catch((error) => error);
-    })
-    .catch((error) => {
-      return response
-        .status(500)
-        .json({ message: "Oops! An error has occurred", data: error });
-    });
+  // const existingUser = await User.findOne({ where: { email } });
+  if (await User.findOne({ where: { email } })) {
+    return response
+      .status(409)
+      .json("Email already exists! Please chose another one.");
+  }
+  try {
+    const passwordHashed = await bcrypt.hash("password", 10);
+    const user = await User.create({ email, password: passwordHashed });
+    response.status(201).json({ message: "Success.", user });
+  } catch (error) {
+    return response
+      .status(500)
+      .json({ message: "Oops! An error has occurred", data: error });
+  }
 };
 
 const login = (request, response) => {
@@ -65,6 +56,8 @@ const login = (request, response) => {
         user.update({ refreshToken }).then((userUpdated) => {
           response.cookie("refreshJWT", refreshToken, {
             httpOnly: true,
+            sameSite: "None",
+            secure: true,
             maxAge: 30 * 24 * 60 * 60 * 1000,
           });
           return response.json({
@@ -117,8 +110,41 @@ const refreshToken = (request, response) => {
     );
 };
 
+const logout = (request, response) => {
+  if (!request.cookies?.refreshJWT) return response.sendStatus(204);
+
+  const token = request.cookies.refreshJWT;
+  User.findOne({ where: { refreshToken: token } })
+    .then((user) => {
+      if (!user) {
+        response.clearCookie("refreshJWT", {
+          httpOnly: true,
+          sameSite: "None",
+          secure: true,
+        });
+        return response.sendStatus(401);
+      }
+
+      user.update({ refreshToken: null }).then((userUpdated) => {
+        response.clearCookie("refreshJWT", {
+          httpOnly: true,
+          sameSite: "None",
+          secure: true,
+        });
+
+        // Chercher le bon code de status renvoyer lors d'une déconnexion
+        // Traduire <Vous êtes déconnecter!> en anglais
+        response.status(204).json("Vous êtes déconnecter!");
+      });
+    })
+    .catch((error) =>
+      response.json({ message: "Token regeneration failed.", data: error })
+    );
+};
+
 module.exports = {
   login,
   register,
   refreshToken,
+  logout,
 };
