@@ -7,13 +7,14 @@
     "start": "node -r dotenv/config server.js",
     "dev": "node -r dotenv/config --watch server.js",
     "key:generate": "node scripts/generateSecretKey.js",
-    "sequelize:migrate": "npx sequelize-cli db:migrate",
-    "sequelize:migrate:undo": "npx sequelize-cli db:migrate:undo"
+    "sequelize:migrate": "npx sequelize db:migrate",
+    "sequelize:migrate:undo": "npx sequelize db:migrate:undo",
+    "sequelize:migrate:refresh": "npx sequelize db:drop && npx sequelize db:create && npx sequelize db:migrate"
   },
   "keywords": [
     "nodejs",
     "express",
-    "sequilize"
+    "sequelize"
   ],
   "author": "PAQUI",
   "license": "ISC",
