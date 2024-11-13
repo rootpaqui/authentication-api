@@ -6,12 +6,13 @@ module.exports = {
       id: {
         allowNull: false,
         primaryKey: true,
-        type: Sequelize.DataTypes.INTEGER,
+        type: Sequelize.DataTypes.UUID,
         defaultValue: Sequelize.DataTypes.UUIDV4,
       },
       email: {
         allowNull: false,
         type: Sequelize.DataTypes.STRING,
+        unique: true,
       },
       password: {
         allowNull: false,
@@ -19,6 +20,7 @@ module.exports = {
       },
       refreshToken: {
         type: Sequelize.DataTypes.STRING,
+        unique: true,
       },
       createdAt: {
         allowNull: false,
