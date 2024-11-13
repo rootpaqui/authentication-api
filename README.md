@@ -58,4 +58,4 @@ After setting up the project, you can start the application by running:
 ```
 npm run start
 ```
-**For a list of available API endpoints, see API Documentation.**
+**For a list of available API endpoints, see [API Documentation](https://documenter.getpostman.com/view/39167456/2sAY55Zd1h).**
