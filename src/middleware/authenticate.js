@@ -1,14 +1,33 @@
 const jwt = require("jsonwebtoken");
+const { User } = require("../models");
 
-module.exports =  (request, response, next) => {
+module.exports = (request, response, next) => {
   const authorizationHeader = request.headers.authorization;
 
-  if (!authorizationHeader) return response.sendStatus(401);
+  if (!authorizationHeader || !request.cookies?.refreshJWT)
+    return response.sendStatus(401);
 
-  const token = authorizationHeader.split(" ")[1];
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error, decodedToken) => {
-    if (error) return response.sendStatus(403);
-    request.user = decodedToken.userId;
-    next();
-  });
+  try {
+    const reqRefreshToken = request.cookies.refreshJWT;
+    const accessToken = authorizationHeader.split(" ")[1];
+
+    jwt.verify(
+      accessToken,
+      process.env.ACCESS_TOKEN_SECRET,
+      async (error, decodedToken) => {
+        if (error || decodedToken.token !== reqRefreshToken) return response.sendStatus(403);
+
+        const user = await User.findOne({
+          where: { refreshToken: decodedToken.token },
+        });
+        if (!user) return response.sendStatus(401);
+
+        request.user = user;
+
+        next();
+      }
+    );
+  } catch (error) {
+    return response.status(401).json({ error });
+  }
 };

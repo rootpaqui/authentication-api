@@ -6,8 +6,7 @@ const router = Router();
 
 router.route("/").get(auth, async (request, response) => {
   try {
-    const id = request.user;
-    const user = await User.findOne({ where: { id } });
+    const user = request.user;
     return response.status(200).json({ data: user });
   } catch (error) {
     return response.sendStatus(500);
