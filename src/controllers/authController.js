@@ -6,12 +6,11 @@ const register = async (request, response) => {
   const { email, password } = request.body;
   if (!email || !password)
     return response.status(400).json("Email and password are required!");
-  // const existingUser = await User.findOne({ where: { email } });
-  if (await User.findOne({ where: { email } })) {
+  if (await User.findOne({ where: { email } }))
     return response
       .status(409)
       .json("Email already exists! Please chose another one.");
-  }
+
   try {
     const passwordHashed = await bcrypt.hash("password", 10);
     const user = await User.create({ email, password: passwordHashed });
@@ -23,123 +22,112 @@ const register = async (request, response) => {
   }
 };
 
-const login = (request, response) => {
-  const errorMessage = "Invalid email or password.";
-  const { email, password } = request.body;
-  if (!email || !password)
-    return response
-      .status(400)
-      .json({ message: "Email and password are required!" });
-  User.findOne({ where: { email } })
-    .then((user) => {
-      if (!user) {
-        return response.status(401).json(errorMessage);
-      }
+const login = async (request, response) => {
+  try {
+    const { email, password } = request.body;
+    const errorMessage = "Invalid email or password.";
 
-      bcrypt.compare(password, user.password).then((isPasswordValid) => {
-        if (!isPasswordValid) {
-          return response.status(401).json(errorMessage);
-        }
+    if (!email || !password)
+      return response
+        .status(400)
+        .json({ message: "Email and password are required!" });
 
-        const accessToken = jwt.sign(
-          { userId: user.id },
-          process.env.ACCESS_TOKEN_SECRET,
-          { expiresIn: "2h" }
-        );
+    const user = await User.findOne({ where: { email } });
+    if (!user) return response.status(401).json(errorMessage);
 
-        const refreshToken = jwt.sign(
-          { userId: user.id },
-          process.env.REFRESH_TOKEN_SECRET,
-          { expiresIn: "30d" }
-        );
-
-        user.update({ refreshToken }).then((userUpdated) => {
-          response.cookie("refreshJWT", refreshToken, {
-            httpOnly: true,
-            sameSite: "None",
-            secure: true,
-            maxAge: 30 * 24 * 60 * 60 * 1000,
-          });
-          return response.json({
-            message: "Authentication successful",
-            data: userUpdated,
-            accessToken,
-          });
-        });
-      });
-    })
-    .catch((error) =>
-      response
-        .status(500)
-        .json({ message: "Authentication failed.", data: error })
-    );
-};
-
-const refreshToken = (request, response) => {
-  if (!request.cookies?.refreshJWT) return response.sendStatus(401);
-
-  const token = request.cookies.refreshJWT;
-  User.findOne({ where: { refreshToken: token } })
-    .then((user) => {
-      if (!user) return response.sendStatus(403);
-
-      jwt.verify(
-        token,
+    if (!(await bcrypt.compare(password, user.password))) {
+      return response.status(401).json(errorMessage);
+    } else {
+      const refreshToken = jwt.sign(
+        { userId: user.id },
         process.env.REFRESH_TOKEN_SECRET,
-        (error, decodedToken) => {
-          if (error || user.id !== decodedToken.userId)
-            return response.sendStatus(403);
+        { expiresIn: "30d" }
+      );
 
-          const accessToken = jwt.sign(
-            { userId: user.id },
-            process.env.ACCESS_TOKEN_SECRET,
-            {
-              expiresIn: "2h",
-            }
-          );
-
-          return response.json({
-            message: "Token have been regenerated.",
-            accessToken,
-          });
+      const accessToken = jwt.sign(
+        { token: refreshToken },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+          expiresIn: "15m",
         }
       );
-    })
-    .catch((error) =>
-      response.json({ message: "Token regeneration failed.", data: error })
-    );
+
+      const userUpdated = await user.update({ refreshToken });
+      if (userUpdated) {
+        response.cookie("refreshJWT", refreshToken, {
+          httpOnly: true,
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+        return response.json({
+          message: "Authentication successful",
+          data: userUpdated,
+          accessToken,
+        });
+      }
+    }
+  } catch (error) {
+    response
+      .status(500)
+      .json({ message: "Authentication failed.", data: error });
+  }
 };
 
-const logout = (request, response) => {
+const refreshToken = async (request, response) => {
+  try {
+    if (!request.cookies?.refreshJWT) return response.sendStatus(401);
+
+    const refreshToken = request.cookies.refreshJWT;
+
+    const user = await User.findOne({ where: { refreshToken } });
+    if (!user) return response.sendStatus(403);
+
+    jwt.verify(
+      refreshToken,
+      process.env.REFRESH_TOKEN_SECRET,
+      (error, decodedToken) => {
+        if (error || user.id !== decodedToken.userId)
+          return response.sendStatus(403);
+
+        const accessToken = jwt.sign(
+          { token: refreshToken },
+          process.env.ACCESS_TOKEN_SECRET,
+          { expiresIn: "15m" }
+        );
+
+        return response.json({
+          message: "Token have been regenerated.",
+          accessToken,
+        });
+      }
+    );
+  } catch (error) {
+    return response
+      .status(500)
+      .json({ message: "Token regeneration failed.", data: error });
+  }
+};
+
+const logout = async (request, response) => {
   if (!request.cookies?.refreshJWT) return response.sendStatus(204);
 
-  const token = request.cookies.refreshJWT;
-  User.findOne({ where: { refreshToken: token } })
-    .then((user) => {
-      if (!user) {
-        response.clearCookie("refreshJWT", {
-          httpOnly: true,
-          sameSite: "None",
-          secure: true,
-        });
-        return response.sendStatus(401);
-      }
+  try {
+    const refreshToken = request.cookies.refreshJWT;
 
-      user.update({ refreshToken: null }).then((userUpdated) => {
-        response.clearCookie("refreshJWT", {
-          httpOnly: true,
-          sameSite: "None",
-          secure: true,
-        });
+    const user = await User.findOne({ where: { refreshToken } });
+    if (!user) {
+      response.clearCookie("refreshJWT", { httpOnly: true });
+      return response.sendStatus(401);
+    }
 
-        // Chercher le bon code de status renvoyer lors d'une déconnexion
-        // Traduire <Vous êtes déconnecter!> en anglais
-        response.status(204).json("Vous êtes déconnecter!");
-      });
-    })
-    .catch((error) =>
-      response.json({ message: "Token regeneration failed.", data: error })
-    );
+    if (await user.update({ refreshToken: null })) {
+      response.clearCookie("refreshJWT", { httpOnly: true });
+      return response.status(200).json({ message: "You are disconnected!" });
+    }
+  } catch (error) {
+    response
+      .status(500)
+      .json({ message: "Oops! Something went wrong.", data: error });
+  }
 };
 
 module.exports = {
