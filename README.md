@@ -24,7 +24,7 @@ A simple REST api for authentication based on JWT.
 
 ## Project setup 
 
-1. Rename the `.env.example` file located at the root of the project to `.env`
+1. Duplicate the `.env.example` file and rename it into `.env`
 
 2. Setup environnement variables in the `.env`:
     + You can set the `PORT` variable with your own. By default it is set to 3000
